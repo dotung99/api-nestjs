@@ -4,7 +4,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { SignupDTO } from './dtos/auth.dto';
-import { Person } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -15,7 +14,7 @@ export class AuthService {
         private prismaService: PrismaService,
         private jwtService: JwtService,
     ){}
-    signup = async (userData: SignupDTO): Promise<Person> => {
+    signup = async (userData: SignupDTO): Promise<any> => {
         const user = await this.prismaService.person.findUnique({
             where: {
                 email: userData.email,

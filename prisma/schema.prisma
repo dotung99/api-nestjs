@@ -7,36 +7,74 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Comment {
-  id        Int   @id @default(autoincrement())
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-}
-
-model Person {
-  id        Int   @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-  password  String
-}
-
 model User {
-  id        Int   @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime
+  id            String @id @default(uuid())
+  name          String?
+  email         String @unique
+  password      String?
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  emailVerified DateTime?
+  resetCode     String?
+
+  accounts      Account[]
+  messages      Message[] @relation("Sender")
+  participants  Participant[]
 }
 
+model Conversation {
+  id             String @id @default(uuid())
+  isGroup        Boolean?
+  name           String?
 
-model Test {
-  id        Int   @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime
+  messages       Message[]
+  lastMessageAt  DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  participants   Participant[]
 }
 
+model Participant {
+  id             String @id @default(uuid())
+  userId         String @default(uuid())
+  conversationId String @default(uuid())
+
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conversationId])
+}
+
+model Account {
+  id                        String @id @default(uuid())
+  userId                    String   @default(uuid())
+  type                      String
+  provider                  String
+  providerAccountId         String
+  refresh_token             String? 
+  access_token              String? 
+  expires_at                Int?
+  token_type                String?
+  scope                     String?
+  id_token                  String? 
+  session_state             String?
+
+  user                      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Message {
+  id                        String @id @default(uuid())
+  text                      String?
+  image                     String?
+  createdAt                 DateTime @default(now())
+  messageType               String @default("text")
+
+  conversationId            String @default(uuid())
+  conversation              Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId                  String @default(uuid())
+  sender                    User @relation("Sender",fields: [senderId], references: [id], onDelete: Cascade)
+}
