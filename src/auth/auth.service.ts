@@ -1,7 +1,4 @@
 /* eslint-disable prettier/prettier */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { SignupDTO } from './dtos/auth.dto';
 import * as bcrypt from 'bcrypt';
@@ -15,7 +12,7 @@ export class AuthService {
         private jwtService: JwtService,
     ){}
     signup = async (userData: SignupDTO): Promise<any> => {
-        const user = await this.prismaService.person.findUnique({
+        const user = await this.prismaService.user.findUnique({
             where: {
                 email: userData.email,
             },
@@ -24,7 +21,7 @@ export class AuthService {
             throw new HttpException({ message: 'User already exists' }, HttpStatus.BAD_REQUEST);
         }
         const hashPassword = await bcrypt.hash(userData.password, 10);
-        return this.prismaService.person.create({
+        return this.prismaService.user.create({
             data: {
                 updatedAt: new Date(),
                 email: userData.email,
@@ -35,13 +32,16 @@ export class AuthService {
     }
 
     login = async (data: { email: string, password: string }): Promise<any> => {
-        const user = await this.prismaService.person.findUnique({
+        const user = await this.prismaService.user.findUnique({
             where: {
                 email: data.email,
             },
         });
         if (!user) {
             throw new HttpException({ message: 'User not found' }, HttpStatus.UNAUTHORIZED);
+        }
+        if (!user.password) {
+            throw new HttpException({ message: 'Invalid user password' }, HttpStatus.UNAUTHORIZED);
         }
         const isMatch = await bcrypt.compare(data.password, user.password);
         if (!isMatch) {
