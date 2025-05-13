@@ -1,7 +1,4 @@
 /* eslint-disable prettier/prettier */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { SignupDTO } from './dtos/auth.dto';
 import * as bcrypt from 'bcrypt';
@@ -43,7 +40,10 @@ export class AuthService {
         if (!user) {
             throw new HttpException({ message: 'User not found' }, HttpStatus.UNAUTHORIZED);
         }
-        const isMatch = await bcrypt.compare(data.password, user.password!);
+        if (!user.password) {
+            throw new HttpException({ message: 'Invalid user password' }, HttpStatus.UNAUTHORIZED);
+        }
+        const isMatch = await bcrypt.compare(data.password, user.password);
         if (!isMatch) {
             throw new HttpException({ message: 'Password does not correct.' }, HttpStatus.UNAUTHORIZED);
         }
