@@ -11,8 +11,8 @@ import { JwtStrategy } from './jwt.strategy';
     secret: process.env.JWT_SECRET,
     signOptions: { expiresIn: '7d' },
   })],
-  controllers: [AuthController,JwtStrategy],
-  providers: [AuthService, PrismaModule, JwtService],
+  controllers: [AuthController],
+  providers: [AuthService, PrismaModule, JwtService, JwtStrategy],
   exports: [JwtModule],
 })
 export class AuthModule { }
