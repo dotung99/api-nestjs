@@ -14,4 +14,9 @@ export class AuthController {
     login(@Body() body: { email: string; password: string }): Promise<any> {
         return this.authService.login(body);
     }
+
+    @Post('refresh')
+    refreshToken(@Body() body: { refreshToken: string }): Promise<any> {
+        return this.authService.refreshToken(body.refreshToken);
+    }
 }
