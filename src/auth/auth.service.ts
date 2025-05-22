@@ -5,6 +5,22 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 
+interface JwtPayload {
+    id: string;
+    email: string | null;
+    name: string | null;
+}
+
+interface LoginResponse {
+    token: string;
+    refreshToken: string;
+    user: {
+        id: string;
+        email: string | null;
+        name: string | null;
+    };
+}
+
 @Injectable()
 export class AuthService {
     constructor(
@@ -31,7 +47,7 @@ export class AuthService {
         })
     }
 
-    login = async (data: { email: string, password: string }): Promise<any> => {
+    login = async (data: { email: string, password: string }): Promise<LoginResponse> => {
         const user = await this.prismaService.user.findUnique({
             where: {
                 email: data.email,
@@ -58,15 +74,20 @@ export class AuthService {
         // Nếu có token cũ, kiểm tra hết hạn
         if (existingAccount?.access_token) {
             try {
-                const decodedToken = this.jwtService.verify(existingAccount.access_token, {
+                this.jwtService.verify(existingAccount.access_token, {
                     secret: process.env.JWT_SECRET,
                 });
                 // Nếu token còn hạn, trả về token cũ
                 return {
                     token: existingAccount.access_token,
-                    refreshToken: existingAccount.refresh_token,
+                    refreshToken: existingAccount.refresh_token || '',
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        name: user.name,
+                    }
                 };
-            } catch (error) {
+            } catch {
                 // Token hết hạn, tạo token mới
             }
         }
@@ -113,12 +134,17 @@ export class AuthService {
         return {
             token,
             refreshToken,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+            }
         }
     }
 
-    refreshToken = async (refreshToken: string): Promise<any> => {
+    refreshToken = async (refreshToken: string): Promise<LoginResponse> => {
         try {
-            const payload = await this.jwtService.verify(refreshToken, {
+            const payload = this.jwtService.verify<JwtPayload>(refreshToken, {
                 secret: process.env.REFRESH_TOKEN_SECRET,
             });
 
@@ -132,7 +158,7 @@ export class AuthService {
                 throw new HttpException({ message: 'User not found' }, HttpStatus.UNAUTHORIZED);
             }
 
-            const newPayload = {
+            const newPayload: JwtPayload = {
                 email: user.email,
                 id: user.id,
                 name: user.name,
@@ -151,8 +177,13 @@ export class AuthService {
             return {
                 token: newAccessToken,
                 refreshToken: newRefreshToken,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                }
             };
-        } catch (error) {
+        } catch {
             throw new HttpException({ message: 'Invalid refresh token' }, HttpStatus.UNAUTHORIZED);
         }
     }

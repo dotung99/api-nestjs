@@ -71,6 +71,7 @@ model Message {
   image                     String?
   createdAt                 DateTime @default(now())
   messageType               String @default("text")
+  seen                      Boolean @default(false)
 
   conversationId            String @default(uuid())
   conversation              Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
